@@ -16,4 +16,4 @@ When a container goes down. A person has to login to the VM or server where this
 - Better networking.
 - No Autoscaling. With k8s we can implement Horizontal and vertical autoscaling. Which scale based on different metrics.
 - Expose service to public using Ingress. With container it is hard to do this.
-- Kube-proxy do loadbalancn=ing to the available number of pods. No external load balancer required.
+- Kube-proxy do loadbalancning to the available number of pods. No external load balancer required.
