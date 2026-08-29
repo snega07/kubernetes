@@ -12,6 +12,7 @@ kubectl get pod -o yaml -> give pod definition in yaml format
 kubectl log pod-name -> shows pod container logs
 kubectl exec -it pod-name -- sh -> opens interactive terminal
 kubectl run nginx --image=nginx --dry-run=client -> will just dry run won't vcreate the pod
+kubectl get pods nginx-pod --show-labels -> shows particular pod object
 
 output to file: This inclused status filed which we can remove. This is added for all the running pod to show the pod status
 
