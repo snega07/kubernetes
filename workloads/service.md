@@ -71,7 +71,7 @@ ExternalName Service is used to provide a Kubernetes DNS name/alias for an exter
 
 - If the external DNS changes, we can simply update the DNS in k8s service of type external.
 - External is to make application running in a pod to access outer application that is exposed using a DNS name.
--  Like if out application use a database endpoint with externalName: my.database.example.com. We can create a external service and make our application access it using this external service http://my-database or my-database.namespace.svc.cluster.local.
+-  Like if our application use a database endpoint with externalName: my.database.example.com. We can create a external service and make our application access it using this external service http://my-database or my-database.namespace.svc.cluster.local.
 - This is only to make our pod access external service.
 
 
