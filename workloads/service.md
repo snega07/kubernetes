@@ -13,6 +13,7 @@ External
 - expose the service and it is accesible from a specific port of a node and forward the traffic to target port of the pod.
 - acessible only when the node and its network is rechable for the client. Stays within the node network.
 - 30000 to 32767
+- can be accessed using nodeIP:port-number. Also each service needs to have unique port.
 
 - We can have more than one set of port of a services. Port filed is a list.
 
@@ -56,3 +57,27 @@ http://backend.backend.svc.cluster.local or http://backend.backend:8080
         │
         ▼
 Backend Service
+
+### Loadbalancer
+
+- Nodeport mode service are accessible only if node network is accesible. Also each application must be exposed in unique port. It is hard to share the NodeIP of each node where the ppd runs to the end user, which is not a good practice.
+- Create external loadbalancer and refer this loadbalancer from k8s service. The application can be accessed from outside world.
+- Loadbalancer use clusterIp internally. Also it creates a node port mapping for this service.
+- We need a cloud provider, which provides loadbalancer. Then will get an external IP.
+
+### External
+
+ExternalName Service is used to provide a Kubernetes DNS name/alias for an external service. It allows applications running inside the cluster to access an external service using the Kubernetes Service name instead of directly using the external DNS name
+
+- If the external DNS changes, we can simply update the DNS in k8s service of type external.
+- External is to make application running in a pod to access outer application that is exposed using a DNS name.
+-  Like if out application use a database endpoint with externalName: my.database.example.com. We can create a external service and make our application access it using this external service http://my-database or my-database.namespace.svc.cluster.local.
+- This is only to make our pod access external service.
+
+
+| Type             | ClusterIP | NodePort  | External LB | Selects Pods |
+| ---------------- | --------- | --------- | ----------- | ------------ |
+| **ClusterIP**    | ✅         | ❌         | ❌           | ✅            |
+| **NodePort**     | ✅         | ✅         | ❌           | ✅            |
+| **LoadBalancer** | Usually ✅ | Usually ✅ | ✅           | ✅            |
+| **ExternalName** | ❌         | ❌         | ❌           | ❌            |
