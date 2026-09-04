@@ -1,3 +1,26 @@
+Whenever you make a change to the Pod template in a Deployment, Kubernetes creates a new ReplicaSet or replication controller.
+
+Deployment = Kubernetes → ReplicaSet → Pods
+DeploymentConfig = OpenShift → ReplicationController → Pods
+
+Older Kubernetes
+ReplicationController
+       ↓
+     Pods
+
+
+Modern Kubernetes
+Deployment
+    ↓
+ReplicaSet
+    ↓
+   Pods
+
+Replication controller - replication/self-healing/scaling
+replicaset - improved replication/self-healing/scaling
+deployment - Replicaset + rollout/update/rollback management
+
+
 ### Replication controller:(legacy)
 Helps to maintain a desired number of replicas(count of pod)
 Has loadbalancing capacity
@@ -40,5 +63,16 @@ But with deployment maintaining replicaset. We can do rolling update or rollback
 
 kubectl rollout history deploy/deployment-name
 kubectl rollout undo deployment-name
+
+
+| Feature              | ReplicationController          | ReplicaSet                     |
+| -------------------- | ------------------------------ | ------------------------------ |
+| Purpose              | Maintains desired Pod replicas | Maintains desired Pod replicas |
+| API                  | `ReplicationController`        | `ReplicaSet`                   |
+| Selector             | **Equality-based** only        | **Set-based + equality-based** |
+| Example selector     | `app=nginx`                    | `app in (nginx, apache)`       |
+| Used with Deployment | ❌ No                           | ✅ Yes                          |
+| Modern Kubernetes    | Legacy                         | Recommended                    |
+| Replacement          | —                              | Replaced RC                    |
 
 
