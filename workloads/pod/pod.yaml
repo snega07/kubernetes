@@ -21,3 +21,25 @@ spec:
     - containerPort: 80
     command: ["sh", "-c"]
     args: ["while true; do echo Hello Kubernetes!; sleep 10; done"]
+  tolerations:
+  - key: "gpu.enabled"
+    operator: "Exists"
+    effect: "NoExecute"
+    tolerationSeconds: 120
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: disktype
+            operator: NotIn
+            values:
+            - ssd 
+            - hhd
+          - key: cpu
+            operator: DoesNotExist
+        - matchExpressions:
+          - key: region
+            operator: In
+            values:
+            - us-west-1
