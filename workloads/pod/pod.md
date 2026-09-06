@@ -19,7 +19,7 @@ Declarative - Tells k8s whats the final state we want. More suitable for repo in
 | `kubectl create -f pod.yaml` | ✅ Creates, imperative             | ❌ Error                 |
 | `kubectl apply -f pod.yaml`  | ✅ Creates, declarative            | ✅ Updates               |
 
-When created using apply, future update is alowed. As first creation using apply maintain annotaion that stores and compare previous state of the resource. If created using create command this annotation is omitted. So we can't use apply to uodate further.
+When created using apply, future update is alowed. As first creation using apply maintain last configured annotaion that stores and compare previous state of the resource. If created using create command this annotation is omitted. So we can't use apply to uodate further.
 
 kubectl describe pod -> shows pod creation events, node details, image, env, labels and other details about pod
 kubectl get pod - o wide -> shows pod in the namespace with IP details
