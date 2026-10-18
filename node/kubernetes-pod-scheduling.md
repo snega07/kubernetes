@@ -7,7 +7,7 @@
 ``` yaml
 Key=value:effect
 taint:  kubectl taint node kind-dev-worker2 gpu.enabled=true:NoExecute
-untaint : kubectl taint node kind-dev-worker2 gpu.enabled=true:NoExecute-
+untaint : kubectl untaint node kind-dev-worker2 gpu.enabled=true:NoExecute-
 ```
 **allowed effects:**
 - NoSchedule = existing pod will keep on running. New Pod must tolreate the taint

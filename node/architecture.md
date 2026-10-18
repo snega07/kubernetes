@@ -10,7 +10,7 @@ Controller Manager -> Helps to maintain the desired number of replica. Namepsace
 Worker Node
 
 ContainerD
-Kubelet -> Helps to restart, signals containerd to pull image and start a container. Receives request from API server to do chnages in resources.
+Kubelet -> Helps to restart, signals containerd to pull image and start a container. Receives request from API server to do changes in resources.
 Kube-proxy -> Enables networking within the node. Helps pod to communicate with each and and configure IPtable rules. Pod to Pod networking.
 
 User -> kubectl cli -> interacts with API server -> authenticate, validate and check RBAC -> Sends to etcd and store the entry then signals back to API server -> Then scheduler keeps on monitoring the control plane so it find that it needs to schedule a pod it go on and helps to schedule the pod in worker node signal to API server-> API sevrer asks Kubelet to create the pod sends response to API server-> API server adds entry to etcd pod created and user get the response back to user. 
