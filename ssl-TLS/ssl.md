@@ -20,6 +20,14 @@ How SSl/TLS works?
 The correct one-way TLS flow
 1. Server sends its certificate. Your browser validates the certificate chain, trusted CA, expiration, and hostname using the SAN (and, where applicable, the CN).
 2. Both sides exchange temporary public key shares. Each side generates its own temporary key pair. They exchange their public shares — not their private keys — and independently calculate the same shared secret using ECDHE.
+
+The handshake data is not all encrypted with one handshake key from the very beginning:
+- The initial ClientHello and ServerHello messages are normally sent unencrypted in TLS 1.3.
+- After the handshake keys are established, subsequent handshake messages—such as the server certificate and CertificateVerify—are encrypted.
+- After the handshake finishes, application traffic keys protect normal HTTPS data.
+
+The ECDHE shared secret becomes input to the TLS 1.3 key schedule. HKDF then derives handshake traffic keys and, later, application traffic keys.
+
 3. Server proves it owns its private key. The server signs handshake data using the private key corresponding to its certificate. The browser verifies the signature using the certificate's public key. This proves possession of the private key and authenticates the handshake.
 4. Both sides derive traffic keys. TLS uses the shared secret material and handshake-dependent inputs in its key-derivation process to derive matching client-to-server and server-to-client traffic keys.
 
