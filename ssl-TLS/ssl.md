@@ -91,3 +91,13 @@ IV stands for Initialization Vector. In TLS 1.3, it is a value used by the symme
 ![alt text](image-1.png)
 
 A subtle but important TLS 1.3 detail: the IV derived by HKDF is a static, per-traffic-key IV. For each TLS record, TLS combines it with a record sequence number to construct a unique nonce. That nonce is used by AES-GCM or ChaCha20-Poly1305.
+
+Note:
+
+The simplest way to remember it:
+- ECDHE establishes the shared secret.
+- HKDF derives the traffic secret, traffic key, and IV through the TLS key schedule.
+- The encryption algorithm uses the traffic key and per-record nonce to encrypt and authenticate your HTTPS data.
+
+
+![alt text](image-2.png)
