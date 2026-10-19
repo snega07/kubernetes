@@ -29,7 +29,7 @@ The ECDHE shared secret becomes input to the TLS 1.3 key schedule. HKDF then der
 1. Server sends its certificate. Your browser validates the certificate chain, trusted CA, expiration, and hostname using the SAN (and, where applicable, the CN).
 2. Both sides exchange temporary public key shares. Each side generates its own temporary key pair. They exchange their public shares — not their private keys — and independently calculate the same shared secret using ECDHE.**(Done at the beginning)**
 3. Server proves it owns its private key. The server signs handshake data using the private key corresponding to its certificate. The browser verifies the signature using the certificate's public key. This proves possession of the private key and authenticates the handshake.
-4. Both sides derive traffic keys. TLS uses the shared secret material and handshake-dependent inputs in its key-derivation process to derive matching client-to-server and server-to-client traffic keys.
+4. Both sides derive traffic keys(**symmetric encrytion same key derived independently without sharing ober network**). TLS uses the shared secret material and handshake-dependent inputs in its key-derivation process to derive matching client-to-server and server-to-client traffic keys.
 
 Traffic key	      Browser has	Server has
 Client-to-server	Encrypts	Decrypts
@@ -54,4 +54,40 @@ In mTLS, the flow includes additional client-authentication steps:
 5. Client proves it possesses the corresponding private key, typically by signing handshake data.
 6. Both sides complete the handshake and derive traffic keys.
 
+**Algorithm**
 
+1. ECDHE — Elliptic Curve Diffie-Hellman Ephemeral
+
+It is used to create temprorary key pair on both ends. To let the browser and server independently calculate the same shared secret without sending that secret over the network.
+
+The secret is never transmitted. The ephemeral part means temporary key pairs are generated for the connection/key exchange, supporting forward secrecy when the ephemeral secrets are properly erased.
+
+2. HKDF — HMAC-based Key Derivation Function
+Purpose: To turn secret material into the specific cryptographic secrets and keys TLS needs.
+
+ECDHE gives both sides a shared secret, but TLS needs multiple keys—not just one.
+
+HKDF helps derive:
+- Handshake traffic secrets
+- Handshake encryption keys and IVs
+- Application traffic secrets
+- Application encryption keys and IVs
+It works in two main stages:
+- HKDF-Extract: processes input key material and a salt to produce a pseudorandom key.
+- HKDF-Expand: derives the required key material using labels and context.
+
+
+![alt text](image.png)
+
+The important distinction
+HKDF doesn't simply take the ECDHE shared secret and directly generate every key in one operation. TLS 1.3 uses a staged key schedule:
+- It derives intermediate secrets.
+- It derives handshake traffic secrets, incorporating the relevant handshake transcript hash.
+- It derives application traffic secrets later, incorporating the transcript through the server's Finished message for the initial application traffic secrets.
+- It derives each actual traffic key and IV from its corresponding traffic secret.
+
+IV stands for Initialization Vector. In TLS 1.3, it is a value used by the symmetric encryption algorithm alongside the encryption key to protect data securely.
+
+![alt text](image-1.png)
+
+A subtle but important TLS 1.3 detail: the IV derived by HKDF is a static, per-traffic-key IV. For each TLS record, TLS combines it with a record sequence number to construct a unique nonce. That nonce is used by AES-GCM or ChaCha20-Poly1305.
