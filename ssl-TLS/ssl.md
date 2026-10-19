@@ -99,5 +99,4 @@ The simplest way to remember it:
 - HKDF derives the traffic secret, traffic key, and IV through the TLS key schedule.
 - The encryption algorithm uses the traffic key and per-record nonce to encrypt and authenticate your HTTPS data.
 
-
 ![alt text](image-2.png)
