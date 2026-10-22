@@ -1,11 +1,18 @@
+**Kubeconfig**
+
+When we execute a command in kubectl. How does our cluster API server authenticates the user who is interacting. This is done using the kubeconfig file.
+
+The kubeconfig file is a configuration file that tells kubectl which clusters it can connect to, how to authenticate to them, and which cluster and user combination to use by default.
+
+By default it is placed in the $HOME/.kube/config
+
+Commands:
+
 kubectl config view
 kubectl config current-context
 kubectl config get-contexts
 kubectl config use-context cluster-name
 kubectl config delete-context cluster-name
-
-
-The kubeconfig file is a configuration file that tells kubectl which clusters it can connect to, how to authenticate to them, and which cluster and user combination to use by default.
 
 **The 4 important fields in kubeconfig**
 
