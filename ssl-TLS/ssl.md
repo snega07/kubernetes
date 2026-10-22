@@ -5,6 +5,9 @@
 
 **How ssh works?**
 
+
+![alt text](ssh.png)
+
 **Create an SSH key pair:** Generate a public key and a private key. Keep the private key secure.
 Copy the public key to the server: Store it in the target Linux user's ~/.ssh/authorized_keys file. In AWS EC2, AWS typically installs the selected public key when the instance launches.
 **Initiate SSH:** Your SSH client connects to the server and offers the public key corresponding to your private key.
@@ -15,6 +18,8 @@ Copy the public key to the server: Store it in the target Linux user's ~/.ssh/au
 **Remember:** The private key never needs to be sent to the server. SSH uses the private key to sign and the public key to verify.
 
 **How SSl/TLS works?**
+
+![alt text](SSL-TLS.png)
 
 The correct **one-way TLS** flow
 
