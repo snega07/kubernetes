@@ -31,10 +31,17 @@ options:
 AlwaysAllow
 AlwaysDeny
 
-- authorization-policy-file
+- authorization-policy-file for ABAC
 
 
+________________________________________
 
+Role - Role binding to user or group (namespace scoped) -
+> POD, deployment, services, routes
+
+Cluster Role - Cluster role binding to User or group (Cluster scoped) - node, csr and so on.
+
+Service Account -> RBAC (image pull secret) for private registry. Role binding to SA. Service account token mount in container.
 
 
 
