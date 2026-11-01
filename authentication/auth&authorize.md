@@ -43,5 +43,15 @@ Cluster Role - Cluster role binding to User or group (Cluster scoped) - node, cs
 
 Service Account -> RBAC (image pull secret) for private registry. Role binding to SA. Service account token mount in container.
 
+Network policies:
+Restrict ingress and egress
 
+Kind use CNI plugin kindnet and Network policies are disabled by default. 
+Create cluster with custom kind.yaml bu disabling CNI plugin.
+Install and use weavenet or calico
 
+restrict access of DB from frontend
+
+rules for network polices in production
+default deny
+allow 
