@@ -12,3 +12,7 @@ configure - resource request, limit. Break and debug
 Install metrics server -> kubectl top, HPA implemetation vs VPA
 Probes - tcp, http, exec
 CSR in k8s btw -> worker node, control plane node
+
+-------
+
+EC2 instance with security group -> control plane port and protocols
