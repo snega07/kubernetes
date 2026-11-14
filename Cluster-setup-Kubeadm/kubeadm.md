@@ -75,7 +75,7 @@ Why Swap needs to be disabled on the K8s node?
 - Application use both swap and RAM which makes application performance less predictable and hard to manage rsource allocation.
 - Since few running workloads get to use swapped memeory. Memory usage is less predictable.
 - Newer version of k8s support swap to be enabled. But manual configuration of cgroups required.
-- The conatiner resource limit like memory and cpu all specify to available core and RAM. SSD/HDD/NAS is for persistent storage class.
+- The conatiner resource limit like memory and cpu all specify to available core and RAM. SSD/HDD/NAS is for persistent storage class, ephermal storage, conatiner image storage, writable layer, pod logs, OS usage.
 
 
 | Feature                  | RAM                      | ROM / Firmware Flash                    | SSD                                |
