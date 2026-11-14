@@ -64,4 +64,39 @@ What happens automatically?
 1) Create VMs for control plane and worker node.
 2) Create security group to allow port and protocols for control plane component.
 ![alt text](k8s-component-ports.png)
-3) 
+https://kubernetes.io/docs/reference/networking/ports-and-protocols/
+3) Configure below on both master and worker node  
+
+**Disable Swap**
+
+Why Swap needs to be disabled on the K8s node?
+
+- If swap is enabled there will be latency issue. Since based on the swap configuration, some data can be tranfered to swap memory which will increase latency of the application.
+- Application use both swap and RAM which makes application performance less predictable and hard to manage rsource allocation.
+- Since few running workloads get to use swapped memeory. Memory usage is less predictable.
+- Newer version of k8s support swap to be enabled. But manual configuration of cgroups required.
+- The conatiner resource limit like memory and cpu all specify to available core and RAM. SSD/HDD/NAS is for persistent storage class.
+
+
+| Feature                  | RAM                      | ROM / Firmware Flash                    | SSD                                |
+| ------------------------ | ------------------------ | --------------------------------------- | ---------------------------------- |
+| **Purpose**              | Temporary working memory | Stores startup instructions (BIOS/UEFI) | Stores OS, applications, and files |
+| **Data after power off** | Lost (volatile)          | Retained (non-volatile)                 | Retained (non-volatile)            |
+| **Can be updated?**      | Yes                      | Yes, firmware can be updated            | Yes                                |
+| **Example**              | Running applications     | BIOS/UEFI                               | Windows, Chrome, documents         |
+| **Usage**                | Currently running app    | Startup low level instruction           | OS, files and other                |
+
+### Understand with a laptop example
+Imagine switching on your laptop:
+1. ROM / Firmware
+   
+   Contains BIOS/UEFI instructions. Helps initialize hardware and start the boot process.
+2. SSD
+   
+   Stores your operating system, such as Windows.
+3. RAM
+   
+   Windows and its running processes are loaded into RAM so the CPU can work with them.
+4. Swap
+   
+   If configured and needed, some memory pages can be moved from RAM to disk temporarily
