@@ -102,6 +102,7 @@ Imagine switching on your laptop:
    If configured and needed, some memory pages can be moved from RAM to disk temporarily
 
 ### Forwarding IPv4 and letting iptables see bridged traffic**
+![alt text](netfilter.png)
 
 **Load kernel modules**
 **Overlay driver** -> Overlay helps to unify docker read only layer and add a writable layer upon it for the conatiner related modifications.
@@ -135,7 +136,7 @@ The Machine	Physical Server A, Server B	Pod A, Pod B
 
 Yes, interface crossing requires IP forwarding (net.ipv4.ip_forward = 1), and netfilter automatically inspects packets along that path.
 
-Comparision:
+**Comparision:**
 
 When you run two Python applications directly on a normal Linux server without containers or Kubernetes:
 • Shared Network Stack & Same IP: Both Python processes share the exact same host network namespace and the same server IP address (e.g., 127.0.0.1 for local calls, or 192.168.1.10 for network calls).
