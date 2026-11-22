@@ -65,9 +65,16 @@ What happens automatically?
 2) Create security group to allow port and protocols for control plane component.
 ![alt text](k8s-component-ports.png)
 https://kubernetes.io/docs/reference/networking/ports-and-protocols/
+
+_______________________________________________________________________________________________________________________________________
 3) Configure below on both master and worker node  
 
 ### Disable Swap**
+
+``` bash
+sudo swapoff -a
+sudo sed -i '/ swap / s/^\(.*\)$/#\1/g' /etc/fstab
+```
 
 Why Swap needs to be disabled on the K8s node?
 
@@ -102,7 +109,38 @@ Imagine switching on your laptop:
    If configured and needed, some memory pages can be moved from RAM to disk temporarily
 
 ### Forwarding IPv4 and letting iptables see bridged traffic**
+
 ![alt text](netfilter.png)
+
+``` bash
+# cat(reads input and write it to standard output) tee (write input to a file) /etc/modules-load.d has the modules that needs to loaded when the system boots
+cat <<EOF | sudo tee /etc/modules-load.d/k8s.conf
+overlay
+br_netfilter
+EOF
+
+# previous step will make the module load during reboot, but for instance modprobe helps to load modules to the running kernel
+
+sudo modprobe overlay
+sudo modprobe br_netfilter
+
+# sysctl params required by setup, params persist across reboots, these params are used by running modules
+cat <<EOF | sudo tee /etc/sysctl.d/k8s.conf
+net.bridge.bridge-nf-call-iptables  = 1
+net.bridge.bridge-nf-call-ip6tables = 1
+net.ipv4.ip_forward                 = 1
+EOF
+
+# Apply sysctl params without reboot
+sudo sysctl --system
+
+# Verify that the br_netfilter, overlay modules are loaded by running the following commands: lsmod displays running kernel modules
+lsmod | grep br_netfilter
+lsmod | grep overlay
+
+# Verify that the net.bridge.bridge-nf-call-iptables, net.bridge.bridge-nf-call-ip6tables, and net.ipv4.ip_forward system variables are set to 1 in your sysctl config by running the following command:
+sysctl net.bridge.bridge-nf-call-iptables net.bridge.bridge-nf-call-ip6tables net.ipv4.ip_forward
+```
 
 **Load kernel modules**
 **Overlay driver** -> Overlay helps to unify docker read only layer and add a writable layer upon it for the conatiner related modifications.
@@ -147,10 +185,179 @@ When you run two Python applications directly on a normal Linux server without c
 	• No IP Forwarding (ip_forward): Traffic isn't moving between different network interfaces or subnets.
 	• No br_netfilter or NAT Translation: There is no virtual ClusterIP to translate—App A already knows App B's exact IP and port.
 
+___________________________________________________________________________________________________________________________________
 
-modules-load.d: Configures modules to load automatically during boot.
+### Install Container Runtime:
 
-cat <<EOF | sudo tee /etc/modules-load.d/k8s.conf
-overlay
-br_netfilter
-EOF
+![alt text](image.png)
+
+**CRI** (Container Runtime Interface): Defines how Kubernetes communicates with a container runtime. Initially, Kubernetes had its own integrations with different container runtimes.To standardize this communication, Kubernetes introduced CRI.Now any container runtime that implements CRI can integrate with kubelet.
+
+Examples:
+- containerd (through its CRI plugin)
+- CRI-O
+
+**OCI** (Open Container Initiative): Defines standards for container images and how containers should be created and executed.
+
+It has three important specifications.
+**A. OCI Image Specification**
+Defines how container images should be packaged and structured.
+
+For example, when you build a Docker image:
+docker build -t myapp:v1 .
+
+The resulting image can follow the OCI image format. This allows compatible container runtimes to consume images regardless of which tool built them.
+
+**B. OCI Runtime Specification**
+Defines how a container should be configured and executed.
+
+For example, it describes:
+- Root filesystem.
+- Process configuration.
+- Environment variables.
+- Mount points.
+- Namespaces.
+- Resource limits.
+This is where runc comes into the picture. runc implements the OCI Runtime Specification.
+
+**C. OCI Distribution Specification**
+Defines how container images and related artifacts are distributed through registries.
+For example, pushing and pulling images through container registries.
+
+``` bash
+# Download and extract containerd runtime binary
+curl -LO https://github.com/containerd/containerd/releases/download/v2.3.6/containerd-2.3.6-linux-amd64.tar.gz
+sudo tar Cxzvf /usr/local containerd-2.3.6-linux-amd64.tar.gz
+
+# Download conatinerd.service and move to systemd location
+curl -LO https://raw.githubusercontent.com/containerd/containerd/v2.3.6/containerd.service
+sudo mkdir -p /usr/local/lib/systemd/system/
+sudo mv containerd.service /usr/local/lib/systemd/system/
+
+#Create containerd config file
+sudo mkdir -p /etc/containerd
+containerd config default | sudo tee /etc/containerd/config.toml
+
+#Enable systemdCgroup in config file
+sudo sed -i 's/SystemdCgroup \= false/SystemdCgroup \= true/g' /etc/containerd/config.toml
+
+#Reload the systemd to read the latest cofig file
+sudo systemctl daemon-reload
+
+# Enable auto loading of containerd service during reboot and enable it in current system as well without reboot
+sudo systemctl enable --now containerd
+
+# Check that the systemd cgroup driver is enabled. This must print "SystemdCgroup = true"
+grep SystemdCgroup /etc/containerd/config.toml
+
+# Check that containerd service is up and running
+systemctl status containerd
+```
+
+Container runtime helps to run the container by pulling image from repo and helps to start the container and maintain their lifecycle. K8s supported docker runtime previously. Now, by default the container runtime is containerd even in managed k8s services like aks, eks.
+
+**Containerd** is the daemon that manages the conatiner lifecycle like start stop restart pause kill. **Containerd.service** is the mannual that helps systemd to manage containerd. 
+
+- containerd is the actual application.
+- containerd.service is the instruction manual for systemd to start, stop and manage that application.
+- ctr = Command-line client to interact with containerd.
+
+**cgroups:** Since each conatiner is a separate process, cgroups are responsible to maintain the resource limit for a process. It is a linux mechanism for resource control, used to maintain the resource request and limit configured in container.
+**cgroup driver:** Determines how cgroup hierarchies are managed.
+- systemd cgroups: Instead of independently managing cgroups, the container runtime asks systemd to create and manage the relevant cgroups.Think of systemd as the central manager responsible for organizing processes into cgroups. **SystemdCgroup** tells containerd to use systemd for cgroup management.
+- cgroupfs: The container runtime directly manages the hierarchy through the cgroup filesystem.
+
+### Install RUNC
+
+runc is the low-level container runtime responsible for actually creating and starting containers using Linux kernel features. Containerd delegates actual conatiner creation task to runc.
+
+``` bash
+curl -LO https://github.com/opencontainers/runc/releases/download/v1.5.2/runc.amd64
+sudo install -m 755 runc.amd64 /usr/local/sbin/runc
+```
+
+### Install and configure crictl
+
+crictl is a command-line tool used to interact with container runtimes that support Kubernetes CRI (Container Runtime Interface). crictl communicates through the Kubernetes Container Runtime Interface (CRI).
+
+You can use it to:
+- List running containers.
+- List container images.
+- Inspect containers.
+- View container logs.
+- Start and stop containers.
+- Troubleshoot container runtime issues.
+Think of it as a troubleshooting CLI for Kubernetes container runtimes.
+
+``` bash
+#When I execute crictl commands, communicate with containerd through this socket
+VERSION="v1.37.0"
+
+curl -LO https://github.com/kubernetes-sigs/cri-tools/releases/download/${VERSION}/crictl-${VERSION}-linux-amd64.tar.gz
+
+sudo tar -C /usr/local/bin -xzf crictl-${VERSION}-linux-amd64.tar.gz
+
+rm crictl-${VERSION}-linux-amd64.tar.gz
+
+#crictl communicates with containerd through its CRI plugin using a Unix domain socket.
+sudo crictl config runtime-endpoint unix:///run/containerd/containerd.sock
+```
+
+________________________________________________________________________________________________________________________________________
+
+### Install CNI plugins
+
+CNI stands for Container Network Interface.
+
+It is a specification that defines how container networking is configured.
+
+CNI: Defines the contract (how a container runtime communicates with a networking plugin).
+Calico / Flannel / Cilium / Weave: Actual implementations that perform networking operations.
+
+Remember:
+- containerd manages container lifecycle.
+- runc creates and starts containers.
+- CNI plugins configure container networking.
+For example, when Kubernetes creates a Pod, that Pod needs:
+- An IP address.
+- Network connectivity.
+- Communication with other Pods.
+- Connectivity to services and external networks.
+CNI plugins help configure this networking.
+
+``` bash
+curl -LO https://github.com/containernetworking/plugins/releases/download/v1.9.1/cni-plugins-linux-amd64-v1.9.1.tgz
+sudo mkdir -p /opt/cni/bin
+sudo tar Cxzvf /opt/cni/bin cni-plugins-linux-amd64-v1.9.1.tgz
+```
+
+### Install Calico
+
+CNI is the networking interface/specification, while Calico is one implementation that provides Kubernetes Pod networking, routing and network policy enforcement. It run as daemon set which runs pod on all eligible node.
+``` bash
+curl -LO https://github.com/containernetworking/plugins/releases/download/v1.9.1/cni-plugins-linux-amd64-v1.9.1.tgz
+sudo mkdir -p /opt/cni/bin
+sudo tar Cxzvf /opt/cni/bin cni-plugins-linux-amd64-v1.9.1.tgz
+```
+________________________________________________________________________________________________________________________________________
+
+### Install Kubelet, kubectl, kubeadm
+
+![alt text](image-1.png)
+
+``` bash
+sudo apt-get update
+sudo apt-get install -y apt-transport-https ca-certificates curl gpg
+
+sudo mkdir -p -m 755 /etc/apt/keyrings
+curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.36/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.36/deb/ /' | sudo tee /etc/apt/sources.list.d/kubernetes.list
+
+sudo apt-get update
+sudo apt-get install -y kubelet kubeadm kubectl
+sudo apt-mark hold kubelet kubeadm kubectl
+
+kubeadm version
+kubelet --version
+kubectl version --client
+```
