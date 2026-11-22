@@ -278,7 +278,7 @@ sudo install -m 755 runc.amd64 /usr/local/sbin/runc
 
 ### Install and configure crictl
 
-crictl is a command-line tool used to interact with container runtimes that support Kubernetes CRI (Container Runtime Interface). crictl communicates through the Kubernetes Container Runtime Interface (CRI).
+crictl is a command-line tool used to interact with container runtimes that support Kubernetes CRI (Container Runtime Interface). crictl communicates through the Kubernetes Container Runtime Interface (CRI). Allows administrators to inspect and troubleshoot containers and Pod sandboxes.
 
 You can use it to:
 - List running containers.
