@@ -72,7 +72,9 @@ ________________________________________________________________________________
 ### Disable Swap**
 
 ``` bash
+#Disables swap in the server check using free -h
 sudo swapoff -a
+#comment out line that starts with swap in /etc/fstab file
 sudo sed -i '/ swap / s/^\(.*\)$/#\1/g' /etc/fstab
 ```
 
@@ -335,29 +337,50 @@ sudo tar Cxzvf /opt/cni/bin cni-plugins-linux-amd64-v1.9.1.tgz
 
 CNI is the networking interface/specification, while Calico is one implementation that provides Kubernetes Pod networking, routing and network policy enforcement. It run as daemon set which runs pod on all eligible node.
 ``` bash
-curl -LO https://github.com/containernetworking/plugins/releases/download/v1.9.1/cni-plugins-linux-amd64-v1.9.1.tgz
-sudo mkdir -p /opt/cni/bin
-sudo tar Cxzvf /opt/cni/bin cni-plugins-linux-amd64-v1.9.1.tgz
+kubectl create -f https://raw.githubusercontent.com/projectcalico/calico/v3.33.0/manifests/v3_projectcalico_org.yaml
+
+kubectl create -f https://raw.githubusercontent.com/projectcalico/calico/v3.33.0/manifests/tigera-operator.yaml
+
+curl https://raw.githubusercontent.com/projectcalico/calico/v3.33.0/manifests/custom-resources.yaml -O
+
+kubectl apply -f custom-resources.yamlz
 ```
 ________________________________________________________________________________________________________________________________________
 
-### Install Kubelet, kubectl, kubeadm
+### Install Kubelet, kubectl, kubeadm either using apt or download direct binaries
 
 ![alt text](image-1.png)
 
 ``` bash
+
+#Refreshes the local package index and downloads.apt-transport-https: HTTPS transport support (already built into modern APT).
+#ca-certificates: Trusted CA certificates for TLS verification.
+#curl: Downloads files from URLs.
+#gpg: Manages and verifies cryptographic signing keys.
 sudo apt-get update
 sudo apt-get install -y apt-transport-https ca-certificates curl gpg
 
+#CCreates the directory where APT repository signing keys will be stored.
 sudo mkdir -p -m 755 /etc/apt/keyrings
+#Download the Kubernetes signing key
+#curl downloads the Kubernetes repository's public signing key.
+#gpg --dearmor converts the ASCII-armored key into binary OpenPGP format.
 curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.36/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+#Register the Kubernetes repository
+#deb	Indicates a Debian binary package repository.
+#signed-by	Specifies which GPG key APT should use to verify repository signatures.
+#https://pkgs.k8s.io/...	Kubernetes package repository URL.
 echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.36/deb/ /' | sudo tee /etc/apt/sources.list.d/kubernetes.list
 
+# Now install the packages
 sudo apt-get update
 sudo apt-get install -y kubelet kubeadm kubectl
 sudo apt-mark hold kubelet kubeadm kubectl
-
+#Verify the versions
 kubeadm version
 kubelet --version
 kubectl version --client
 ```
+
+kubeadm join 172.31.10.69:6443 --token 4smyu5.ev2t2oyt4nniauy3 \
+        --discovery-token-ca-cert-hash sha256:c1ab05330675107e3470c178c161dafeedadfd9fc25d5fcdca991be1403e2577 
