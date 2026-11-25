@@ -229,24 +229,35 @@ For example, pushing and pulling images through container registries.
 ``` bash
 # Download and extract containerd runtime binary
 curl -LO https://github.com/containerd/containerd/releases/download/v2.3.6/containerd-2.3.6-linux-amd64.tar.gz
-sudo tar Cxzvf /usr/local containerd-2.3.6-linux-amd64.tar.gz
+sudo tar Cxzvf /usr/local containerd-2.3.6-linux-amd64.tar.gz #system admin installed binaries goes to /usr/local/bin
 
 # Download conatinerd.service and move to systemd location
 curl -LO https://raw.githubusercontent.com/containerd/containerd/v2.3.6/containerd.service
 sudo mkdir -p /usr/local/lib/systemd/system/
 sudo mv containerd.service /usr/local/lib/systemd/system/
 
-#Create containerd config file
+#systemd searches below location for config file :systemd-analyze unit-paths
+
+'
+| Directory                        | Purpose                                           |
+| -------------------------------- | ------------------------------------------------- |
+| `/etc/systemd/system/`           | Administrator-created or customized service files |
+| `/run/systemd/system/`           | Runtime service files (temporary; lost on reboot) |
+| `/usr/local/lib/systemd/system/` | Locally installed service files                   |
+| `/usr/lib/systemd/system/`       | Package-installed service files                   |
+'
+
+#Create containerd config file(system wide config file placed in /etc)
 sudo mkdir -p /etc/containerd
 containerd config default | sudo tee /etc/containerd/config.toml
 
 #Enable systemdCgroup in config file
 sudo sed -i 's/SystemdCgroup \= false/SystemdCgroup \= true/g' /etc/containerd/config.toml
 
-#Reload the systemd to read the latest cofig file
+#Reload the systemd to read the latest config file. daemon-reload tells systemd to reload unit definitions.systemd scans its unit directories again. It discovers the newly installed containerd.service.
 sudo systemctl daemon-reload
 
-# Enable auto loading of containerd service during reboot and enable it in current system as well without reboot
+# Enable auto loading of containerd service during reboot and --now enable it in current system as well without reboot
 sudo systemctl enable --now containerd
 
 # Check that the systemd cgroup driver is enabled. This must print "SystemdCgroup = true"
@@ -274,6 +285,7 @@ Container runtime helps to run the container by pulling image from repo and help
 runc is the low-level container runtime responsible for actually creating and starting containers using Linux kernel features. Containerd delegates actual conatiner creation task to runc.
 
 ``` bash
+#system binaries are placed in /sbin this is called by containerd
 curl -LO https://github.com/opencontainers/runc/releases/download/v1.5.2/runc.amd64
 sudo install -m 755 runc.amd64 /usr/local/sbin/runc
 ```
@@ -294,7 +306,7 @@ Think of it as a troubleshooting CLI for Kubernetes container runtimes.
 ``` bash
 #When I execute crictl commands, communicate with containerd through this socket
 VERSION="v1.37.0"
-
+#usr local binaries placed in /usr/local/bin
 curl -LO https://github.com/kubernetes-sigs/cri-tools/releases/download/${VERSION}/crictl-${VERSION}-linux-amd64.tar.gz
 
 sudo tar -C /usr/local/bin -xzf crictl-${VERSION}-linux-amd64.tar.gz
@@ -328,6 +340,7 @@ For example, when Kubernetes creates a Pod, that Pod needs:
 CNI plugins help configure this networking.
 
 ``` bash
+#optional plugins are installed in /opt
 curl -LO https://github.com/containernetworking/plugins/releases/download/v1.9.1/cni-plugins-linux-amd64-v1.9.1.tgz
 sudo mkdir -p /opt/cni/bin
 sudo tar Cxzvf /opt/cni/bin cni-plugins-linux-amd64-v1.9.1.tgz
@@ -360,7 +373,7 @@ ________________________________________________________________________________
 sudo apt-get update
 sudo apt-get install -y apt-transport-https ca-certificates curl gpg
 
-#CCreates the directory where APT repository signing keys will be stored.
+#Creates the directory where APT repository signing keys will be stored.
 sudo mkdir -p -m 755 /etc/apt/keyrings
 #Download the Kubernetes signing key
 #curl downloads the Kubernetes repository's public signing key.
@@ -381,6 +394,18 @@ kubeadm version
 kubelet --version
 kubectl version --client
 ```
+
+Linux File system hierarchy
+
+| Directory   | Purpose                                           | Examples                                               |
+| ----------- | ------------------------------------------------- | ------------------------------------------------------ |
+| `/usr/bin`  | General-purpose executable binaries               | `ls`, `python3`, `java`, `kubectl`                     |
+| `/usr/sbin` | System administration binaries                    | `sshd`, `apache2`                                      |
+| `/usr/lib`  | Shared libraries and supporting application files | `libc.so`, application libraries                       |
+| `/etc`      | System-wide configuration files                   | `/etc/containerd/config.toml`, `/etc/nginx/nginx.conf` |
+| `/opt`      | Optional or third-party application software      | Google Chrome, third-party applications                |
+| `/var`      | Variable and persistent application data          | Logs, `/var/lib/containerd`                            |
+| `/run`      | Temporary runtime information (cleared on reboot) | Unix sockets, PID files                                |
 
 kubeadm join 172.31.10.69:6443 --token 4smyu5.ev2t2oyt4nniauy3 \
         --discovery-token-ca-cert-hash sha256:c1ab05330675107e3470c178c161dafeedadfd9fc25d5fcdca991be1403e2577 
